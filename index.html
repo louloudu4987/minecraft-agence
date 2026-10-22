@@ -105,7 +105,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 function load(){ try{ const r = localStorage.getItem(KEY); if(r) return JSON.parse(r); }catch(e){} return mem || []; }
 /* Synchro entre joueurs (optionnel) : colle ici l’adresse de ta base Firebase, ex. 'https://mon-agence-default-rtdb.europe-west1.firebasedatabase.app'
    Laisse vide '' pour un fonctionnement local seulement. */
-const DB_URL = '';
+const DB_URL = 'https://console.firebase.google.com/project/agence-f62bd/database/agence-f62bd-default-rtdb/data/~2F';
 function save(l){ mem = l; try{ localStorage.setItem(KEY, JSON.stringify(l)); }catch(e){} try{ bc && bc.postMessage('u'); }catch(e){} refresh(); push(l); }
 function push(l){ if(!DB_URL) return; fetch(DB_URL.replace(/\/$/,'') + '/biens.json', {method:'PUT', body: JSON.stringify(JSON.stringify(l))}).catch(()=>{}); }
 function pull(){
