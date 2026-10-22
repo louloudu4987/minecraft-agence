@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agence immobilière – Panneau</title>
+<style>
+:root{color-scheme:dark;--bg:#14161a;--card:#1f232a;--line:#2e343d;--tx:#f1f3f5;--mut:#9aa3ad;--acc:#e2b04a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--acc)}
+/* ===== Affichage ===== */
+#display{padding:2vw;min-height:100vh;display:flex;flex-direction:column}
+.top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1.2vw}
+.top h1{margin:0;font-size:clamp(20px,3.2vw,54px);letter-spacing:.04em;color:var(--acc)}
+.top span{color:var(--mut);font-size:clamp(12px,1.4vw,24px)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4vw;flex:1}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.card .ph{aspect-ratio:16/10;background:#2a3038 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:clamp(30px,5vw,90px)}
+.card .bd{padding:.9vw 1.1vw 1.1vw}
+.card h2{margin:0;font-size:clamp(14px,1.8vw,32px)}
+.card .vl{color:var(--mut);font-size:clamp(11px,1.2vw,21px);margin:.2em 0 .5em}
+.card .pr{font-weight:700;font-size:clamp(16px,2.2vw,40px);color:var(--acc)}
+.card .mt{color:var(--mut);font-size:clamp(11px,1.2vw,21px);margin-top:.3em}
+.badge{position:absolute;top:.8vw;left:.8vw;padding:.25em .7em;border-radius:6px;font-weight:800;color:#fff;font-size:clamp(11px,1.4vw,26px);letter-spacing:.06em;box-shadow:0 2px 8px #0008}
+.card.done .ph,.card.done .bd{opacity:.45}
+.empty{grid-column:1/-1;text-align:center;color:var(--mut);padding:8vw 2vw;font-size:clamp(14px,2vw,34px)}
+.dots{display:flex;justify-content:center;gap:8px;margin-top:1vw}
+.dots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--acc)}
+/* ===== Gestion ===== */
+#admin{max-width:1000px;margin:0 auto;padding:20px 16px 60px}
+#admin h1{font-size:24px;margin:0 0 4px;color:var(--acc)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 20px;align-items:center}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:20px}
+.panel h3{margin:0 0 12px;font-size:16px}
+.f{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)}
+input,select,textarea,button{font:inherit;color:var(--tx);background:#12151a;border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+textarea{resize:vertical;min-height:60px}
+button{cursor:pointer;background:#2a3038}
+button:hover{border-color:var(--acc)}
+button.pri{background:var(--acc);color:#1a1405;border-color:var(--acc);font-weight:700}
+button.dng{border-color:#8a3430;color:#ff8a82}
+.row{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.row:first-of-type{border-top:0}
+.row .th{width:64px;height:48px;border-radius:6px;background:#2a3038 center/cover;flex:none}
+.row .nm{flex:1;min-width:160px}
+.row .nm small{display:block;color:var(--mut)}
+.row select{min-width:130px}
+.mut{color:var(--mut);font-size:13px}
+</style>
+</head>
+<body>
+
+<div id="display" hidden>
+  <div class="top"><h1>🏠 NOS BIENS</h1><span id="clock"></span></div>
+  <div class="grid" id="grid"></div>
+  <div class="dots" id="dots"></div>
+</div>
+
+<div id="admin" hidden>
+  <h1>Gestion des biens</h1>
+  <div class="mut">Les changements s’affichent automatiquement sur le panneau.</div>
+  <div class="bar">
+    <a href="#">← Voir le panneau</a>
+    <button id="demo">Charger des exemples</button>
+    <button id="exp">Exporter (JSON)</button>
+    <button id="imp">Importer</button>
+    <input id="impf" type="file" accept=".json" hidden>
+  </div>
+
+  <div class="panel">
+    <h3 id="ftitle">Ajouter un bien</h3>
+    <div class="f">
+      <label>Titre<input id="t" placeholder="Villa moderne"></label>
+      <label>Ville / quartier<input id="v" placeholder="Port-Minecraft"></label>
+      <label>Prix (€)<input id="p" type="number" min="0" placeholder="250000"></label>
+      <label>Surface (m²)<input id="s" type="number" min="0"></label>
+      <label>Chambres<input id="c" type="number" min="0"></label>
+      <label>Statut<select id="st"></select></label>
+    </div>
+    <label style="margin-top:10px">Description (optionnel)<textarea id="d"></textarea></label>
+    <label style="margin-top:10px">Photo (capture d’écran Minecraft)<input id="img" type="file" accept="image/*"></label>
+    <div class="bar" style="margin-bottom:0">
+      <button class="pri" id="save">Enregistrer</button>
+      <button id="cancel" hidden>Annuler</button>
+    </div>
+  </div>
+
+  <div class="panel"><h3>Tous les biens (<span id="n">0</span>)</h3><div id="list"></div></div>
+</div>
+
+<script>
+const KEY = 'immo_biens_v1';
+const ST = {
+  vente:['À VENDRE','#2e9e5b'], location:['À LOUER','#2f7fd1'],
+  offre:['SOUS OFFRE','#e08a1e'], vendu:['VENDU','#d1423a'], loue:['LOUÉ','#7a7f87']
+};
+let mem = null, editId = null, imgData = null, page = 0;
+const bc = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('immo') : null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function load(){ try{ const r = localStorage.getItem(KEY); if(r) return JSON.parse(r); }catch(e){} return mem || []; }
+/* Synchro entre joueurs (optionnel) : colle ici l’adresse de ta base Firebase, ex. 'https://mon-agence-default-rtdb.europe-west1.firebasedatabase.app'
+   Laisse vide '' pour un fonctionnement local seulement. */
+const DB_URL = '';
+function save(l){ mem = l; try{ localStorage.setItem(KEY, JSON.stringify(l)); }catch(e){} try{ bc && bc.postMessage('u'); }catch(e){} refresh(); push(l); }
+function push(l){ if(!DB_URL) return; fetch(DB_URL.replace(/\/$/,'') + '/biens.json', {method:'PUT', body: JSON.stringify(JSON.stringify(l))}).catch(()=>{}); }
+function pull(){
+  if(!DB_URL) return;
+  fetch(DB_URL.replace(/\/$/,'') + '/biens.json').then(r => r.json()).then(s => {
+    if(typeof s !== 'string') return;
+    if(s === JSON.stringify(load())) return;
+    mem = JSON.parse(s); try{ localStorage.setItem(KEY, s); }catch(e){}
+    if(!(editId || imgData)) refresh();
+  }).catch(()=>{});
+}
+pull(); setInterval(pull, 10000);
+const money = (b) => b.prix ? Number(b.prix).toLocaleString('fr-FR') + ' €' + ((b.statut==='location'||b.statut==='loue') ? ' /mois' : '') : 'Prix sur demande';
+
+/* ---------- Affichage ---------- */
+const PER = 6;
+function renderDisplay(){
+  const l = load();
+  const pages = Math.max(1, Math.ceil(l.length / PER));
+  if (page >= pages) page = 0;
+  const items = l.slice(page*PER, page*PER + PER);
+  $('grid').innerHTML = items.length ? items.map(b => {
+    const [lab, col] = ST[b.statut] || ST.vente;
+    const done = b.statut==='vendu' || b.statut==='loue';
+    return `<div class="card${done?' done':''}">
+      <div class="ph" style="${b.img?`background-image:url(${b.img})`:''}">${b.img?'':'🏡'}</div>
+      <div class="badge" style="background:${col}">${lab}</div>
+      <div class="bd"><h2>${esc(b.titre)}</h2><div class="vl">${esc(b.ville)}</div>
+      <div class="pr">${money(b)}</div>
+      <div class="mt">${b.surface?esc(b.surface)+' m²':''}${b.surface&&b.chambres?' · ':''}${b.chambres?esc(b.chambres)+' ch.':''}</div></div></div>`;
+  }).join('') : '<div class="empty">Aucun bien pour le moment.<br>Ajoutez-en depuis la page de gestion.</div>';
+  $('dots').innerHTML = pages > 1 ? Array.from({length:pages},(_,i)=>`<i class="${i===page?'on':''}"></i>`).join('') : '';
+}
+setInterval(() => { if(!$('display').hidden){ const p = Math.ceil(load().length/PER); if(p>1){ page=(page+1)%p; renderDisplay(); } } }, 8000);
+setInterval(() => { $('clock').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}); }, 5000);
+$('clock').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+
+/* ---------- Gestion ---------- */
+$('st').innerHTML = Object.entries(ST).map(([k,v]) => `<option value="${k}">${v[0]}</option>`).join('');
+
+function renderAdmin(){
+  const l = load();
+  $('n').textContent = l.length;
+  $('list').innerHTML = l.length ? l.map(b => `
+    <div class="row" data-id="${b.id}">
+      <div class="th" style="${b.img?`background-image:url(${b.img})`:''}"></div>
+      <div class="nm">${esc(b.titre)}<small>${esc(b.ville)} · ${money(b)}</small></div>
+      <select data-act="status">${Object.entries(ST).map(([k,v])=>`<option value="${k}"${k===b.statut?' selected':''}>${v[0]}</option>`).join('')}</select>
+      <button data-act="edit">Modifier</button>
+      <button class="dng" data-act="del">Supprimer</button>
+    </div>`).join('') : '<div class="mut">Aucun bien. Ajoutez-en un ci-dessus.</div>';
+}
+
+$('list').addEventListener('change', e => {
+  if(e.target.dataset.act !== 'status') return;
+  const id = e.target.closest('.row').dataset.id;
+  save(load().map(b => b.id===id ? {...b, statut:e.target.value} : b));
+});
+$('list').addEventListener('click', e => {
+  const btn = e.target.closest('button'); if(!btn) return;
+  const id = btn.closest('.row').dataset.id;
+  if(btn.dataset.act === 'del'){
+    if(btn.dataset.sure){ save(load().filter(b => b.id!==id)); }
+    else { btn.dataset.sure = 1; btn.textContent = 'Sûr ?'; setTimeout(()=>{ btn.textContent='Supprimer'; delete btn.dataset.sure; }, 3000); }
+  }
+  if(btn.dataset.act === 'edit'){
+    const b = load().find(x => x.id===id); if(!b) return;
+    editId = id; imgData = b.img || null;
+    $('t').value=b.titre||''; $('v').value=b.ville||''; $('p').value=b.prix||''; $('s').value=b.surface||'';
+    $('c').value=b.chambres||''; $('st').value=b.statut; $('d').value=b.desc||'';
+    $('ftitle').textContent='Modifier le bien'; $('cancel').hidden=false; scrollTo({top:0,behavior:'smooth'});
+  }
+});
+function resetForm(){
+  editId=null; imgData=null;
+  ['t','v','p','s','c','d'].forEach(i => $(i).value=''); $('img').value=''; $('st').value='vente';
+  $('ftitle').textContent='Ajouter un bien'; $('cancel').hidden=true;
+}
+$('cancel').onclick = resetForm;
+$('img').onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const im = new Image(), u = URL.createObjectURL(f);
+  im.onload = () => {
+    const w = Math.min(560, im.width), h = Math.round(im.height * w / im.width);
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    cv.getContext('2d').drawImage(im, 0, 0, w, h);
+    imgData = cv.toDataURL('image/jpeg', 0.72); URL.revokeObjectURL(u);
+  };
+  im.src = u;
+};
+$('save').onclick = () => {
+  if(!$('t').value.trim()){ $('t').focus(); return; }
+  const b = { id: editId || ('b'+Date.now()), titre:$('t').value.trim(), ville:$('v').value.trim(), prix:$('p').value,
+    surface:$('s').value, chambres:$('c').value, statut:$('st').value, desc:$('d').value, img:imgData };
+  const l = load();
+  save(editId ? l.map(x => x.id===editId ? b : x) : [...l, b]);
+  resetForm();
+};
+$('demo').onclick = () => save([...load(),
+  {id:'d'+Date.now(),    titre:'Villa moderne', ville:'Port-Cube', prix:'450000', surface:'180', chambres:'4', statut:'vente'},
+  {id:'d'+Date.now()+1, titre:'Maison en pierre', ville:'Village des Bois', prix:'850', surface:'90', chambres:'2', statut:'location'},
+  {id:'d'+Date.now()+2, titre:'Manoir de la colline', ville:'Mont-Redstone', prix:'1200000', surface:'400', chambres:'8', statut:'vendu'}]);
+$('exp').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(load())],{type:'application/json'}));
+  a.download = 'biens.json'; a.click();
+};
+$('imp').onclick = () => $('impf').click();
+$('impf').onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { try{ const d = JSON.parse(r.result); if(Array.isArray(d)) save(d); }catch(x){} };
+  r.readAsText(f);
+};
+
+/* ---------- Routage & synchro ---------- */
+function refresh(){ $('display').hidden ? renderAdmin() : renderDisplay(); }
+function route(){
+  const admin = location.hash === '#gestion' || /gestion/i.test(location.pathname + location.search);
+  $('admin').hidden = !admin; $('display').hidden = admin;
+  admin ? renderAdmin() : renderDisplay();
+}
+addEventListener('hashchange', route);
+addEventListener('storage', e => { if(e.key===KEY) refresh(); });
+if(bc) bc.onmessage = refresh;
+route();
+</script>
+</body>
+</html>
