@@ -49,6 +49,9 @@ button.dng{border-color:#8a3430;color:#ff8a82}
 .row .nm small{display:block;color:var(--mut)}
 .row select{min-width:130px}
 .mut{color:var(--mut);font-size:13px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{padding:7px 10px;font-size:13px}
+.seg button.on{color:#fff;font-weight:700}
 </style>
 </head>
 <body>
@@ -78,7 +81,7 @@ button.dng{border-color:#8a3430;color:#ff8a82}
       <label>Prix (€)<input id="p" type="number" min="0" placeholder="250000"></label>
       <label>Surface (m²)<input id="s" type="number" min="0"></label>
       <label>Chambres<input id="c" type="number" min="0"></label>
-      <label>Statut<select id="st"></select></label>
+      <label>Statut<div class="seg" id="st"></div></label>
     </div>
     <label style="margin-top:10px">Description (optionnel)<textarea id="d"></textarea></label>
     <label style="margin-top:10px">Photo (capture d’écran Minecraft)<input id="img" type="file" accept="image/*"></label>
@@ -139,12 +142,17 @@ function renderDisplay(){
   }).join('') : '<div class="empty">Aucun bien pour le moment.<br>Ajoutez-en depuis la page de gestion.</div>';
   $('dots').innerHTML = pages > 1 ? Array.from({length:pages},(_,i)=>`<i class="${i===page?'on':''}"></i>`).join('') : '';
 }
-setInterval(() => { if(!$('display').hidden){ const p = Math.ceil(load().length/PER); if(p>1){ page=(page+1)%p; renderDisplay(); } } }, 8000);
+try{ page = parseInt(localStorage.getItem('immo_page') || '0', 10) || 0; }catch(e){}
+setTimeout(() => { if(!$('display').hidden){ const p = Math.max(1, Math.ceil(load().length/PER)); try{ localStorage.setItem('immo_page', String((page+1)%p)); }catch(e){} location.reload(); } }, 10000);
 setInterval(() => { $('clock').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}); }, 5000);
 $('clock').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
 
 /* ---------- Gestion ---------- */
-$('st').innerHTML = Object.entries(ST).map(([k,v]) => `<option value="${k}">${v[0]}</option>`).join('');
+let curSt = 'vente';
+const segHtml = cur => Object.entries(ST).map(([k,v]) => `<button type="button" data-st="${k}" class="${k===cur?'on':''}" style="${k===cur?'background:'+v[1]+';border-color:'+v[1]:''}">${v[0]}</button>`).join('');
+function setSt(k){ curSt = k; $('st').innerHTML = segHtml(k); }
+setSt('vente');
+$('st').addEventListener('click', e => { const b = e.target.closest('button'); if(b) setSt(b.dataset.st); });
 
 function renderAdmin(){
   const l = load();
@@ -153,20 +161,16 @@ function renderAdmin(){
     <div class="row" data-id="${b.id}">
       <div class="th" style="${b.img?`background-image:url(${b.img})`:''}"></div>
       <div class="nm">${esc(b.titre)}<small>${esc(b.ville)} · ${money(b)}</small></div>
-      <select data-act="status">${Object.entries(ST).map(([k,v])=>`<option value="${k}"${k===b.statut?' selected':''}>${v[0]}</option>`).join('')}</select>
+      <div class="seg">${segHtml(b.statut).replace(/<button /g,'<button data-act="status" ')}</div>
       <button data-act="edit">Modifier</button>
       <button class="dng" data-act="del">Supprimer</button>
     </div>`).join('') : '<div class="mut">Aucun bien. Ajoutez-en un ci-dessus.</div>';
 }
 
-$('list').addEventListener('change', e => {
-  if(e.target.dataset.act !== 'status') return;
-  const id = e.target.closest('.row').dataset.id;
-  save(load().map(b => b.id===id ? {...b, statut:e.target.value} : b));
-});
 $('list').addEventListener('click', e => {
   const btn = e.target.closest('button'); if(!btn) return;
   const id = btn.closest('.row').dataset.id;
+  if(btn.dataset.act === 'status'){ save(load().map(b => b.id===id ? {...b, statut:btn.dataset.st} : b)); return; }
   if(btn.dataset.act === 'del'){
     if(btn.dataset.sure){ save(load().filter(b => b.id!==id)); }
     else { btn.dataset.sure = 1; btn.textContent = 'Sûr ?'; setTimeout(()=>{ btn.textContent='Supprimer'; delete btn.dataset.sure; }, 3000); }
@@ -175,13 +179,13 @@ $('list').addEventListener('click', e => {
     const b = load().find(x => x.id===id); if(!b) return;
     editId = id; imgData = b.img || null;
     $('t').value=b.titre||''; $('v').value=b.ville||''; $('p').value=b.prix||''; $('s').value=b.surface||'';
-    $('c').value=b.chambres||''; $('st').value=b.statut; $('d').value=b.desc||'';
+    $('c').value=b.chambres||''; setSt(b.statut); $('d').value=b.desc||'';
     $('ftitle').textContent='Modifier le bien'; $('cancel').hidden=false; scrollTo({top:0,behavior:'smooth'});
   }
 });
 function resetForm(){
   editId=null; imgData=null;
-  ['t','v','p','s','c','d'].forEach(i => $(i).value=''); $('img').value=''; $('st').value='vente';
+  ['t','v','p','s','c','d'].forEach(i => $(i).value=''); $('img').value=''; setSt('vente');
   $('ftitle').textContent='Ajouter un bien'; $('cancel').hidden=true;
 }
 $('cancel').onclick = resetForm;
@@ -199,7 +203,7 @@ $('img').onchange = e => {
 $('save').onclick = () => {
   if(!$('t').value.trim()){ $('t').focus(); return; }
   const b = { id: editId || ('b'+Date.now()), titre:$('t').value.trim(), ville:$('v').value.trim(), prix:$('p').value,
-    surface:$('s').value, chambres:$('c').value, statut:$('st').value, desc:$('d').value, img:imgData };
+    surface:$('s').value, chambres:$('c').value, statut:curSt, desc:$('d').value, img:imgData };
   const l = load();
   save(editId ? l.map(x => x.id===editId ? b : x) : [...l, b]);
   resetForm();
